@@ -248,7 +248,8 @@ public class KeyboardUtil {
                 final View actionBarOverlayLayout = (View)contentView.getParent();
                 isKeyboardShowing = actionBarOverlayLayout.getHeight() != nowHeight;
             } else {
-                isKeyboardShowing = nowHeight <=previousHeight;
+                //TODO 修复初次判断输入框体是否显示
+                isKeyboardShowing = nowHeight <previousHeight;
 
             }
             if (lastKeyboardShowing != isKeyboardShowing) {
