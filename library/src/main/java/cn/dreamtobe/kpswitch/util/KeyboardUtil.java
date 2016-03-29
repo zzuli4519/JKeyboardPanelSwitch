@@ -59,6 +59,8 @@ public class KeyboardUtil {
     /*保存记录下输入框的高度*/
     private static int LAST_SAVE_KEYBOARD_HEIGHT = 0;
 
+
+    /*保存输入法框体的高度信息*/
     static boolean saveKeyboardHeight(final Context context, int keyboardHeight) {
         if (LAST_SAVE_KEYBOARD_HEIGHT == keyboardHeight) {
             return false;
@@ -79,6 +81,8 @@ public class KeyboardUtil {
      * @see #attach(Activity, IPanelHeightTarget)
      * <p/>
      * Handle and refresh the keyboard height by {@link #attach(Activity, IPanelHeightTarget)}.
+     *
+     * 读取默认的输入法框体大小信息
      */
     public static int getKeyboardHeight(final Context context) {
         if (LAST_SAVE_KEYBOARD_HEIGHT == 0) {
@@ -140,6 +144,8 @@ public class KeyboardUtil {
      * @param activity contain the view
      * @param target   whose height will be align to the keyboard height.
      * @see #saveKeyboardHeight(Context, int)
+     * 设置框体绘制监听。动态改变框体的高度大小
+     *
      */
     public static void attach(final Activity activity, IPanelHeightTarget target) {
         final ViewGroup contentView = (ViewGroup) activity.findViewById(android.R.id.content);
@@ -168,8 +174,10 @@ public class KeyboardUtil {
 
         @Override
         public void onGlobalLayout() {
+
             final View userRootView = contentView.getChildAt(0);
-            // Step 1. calculate the current display frame's height.
+
+            /*计算出当前父容器框体的Rect*/
             Rect r = new Rect();
 
             userRootView.getWindowVisibleDisplayFrame(r);
@@ -231,6 +239,7 @@ public class KeyboardUtil {
             }
         }
 
+        /*根据控件的高度计算是否处于显示状态*/
         private void calculateKeyboardShowing(final int nowHeight) {
 
             boolean isKeyboardShowing;
@@ -239,10 +248,9 @@ public class KeyboardUtil {
                 final View actionBarOverlayLayout = (View)contentView.getParent();
                 isKeyboardShowing = actionBarOverlayLayout.getHeight() != nowHeight;
             } else {
-                isKeyboardShowing = nowHeight < previousHeight;
+                isKeyboardShowing = nowHeight <=previousHeight;
 
             }
-
             if (lastKeyboardShowing != isKeyboardShowing) {
                 Log.d(TAG, String.format("keyboard status change: %B", isKeyboardShowing));
                 this.panelHeightTarget.onKeyboardShowing(isKeyboardShowing);
