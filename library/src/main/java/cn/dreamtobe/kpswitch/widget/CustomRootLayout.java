@@ -22,10 +22,9 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.widget.LinearLayout;
 
-import cn.dreamtobe.kpswitch.util.KeyboardUtil;
+import cn.dreamtobe.kpswitch.util.StatusBarHeightUtil;
 
 
 /**
@@ -33,7 +32,7 @@ import cn.dreamtobe.kpswitch.util.KeyboardUtil;
  *
  * @see PanelLayout
  */
-public class CustomRootLayout extends LinearLayout implements ViewTreeObserver.OnGlobalLayoutListener {
+public class CustomRootLayout extends LinearLayout {
 
     private final static String TAG = "JFrame.CustomRootLayout";
 
@@ -59,31 +58,16 @@ public class CustomRootLayout extends LinearLayout implements ViewTreeObserver.O
         init();
     }
 
-    private final static String STATUS_BAR_DEF_PACKAGE = "android";
-    private final static String STATUS_BAR_DEF_TYPE = "dimen";
-    private final static String STATUS_BAR_NAME = "status_bar_height";
 
+    private int mStatusBarHeight;
     private void init() {
-        getViewTreeObserver().addOnGlobalLayoutListener(this);
-
-        if (!mAlreadyGetStatusBarHeight) {
-            int resourceId = getResources().getIdentifier(STATUS_BAR_NAME, STATUS_BAR_DEF_TYPE, STATUS_BAR_DEF_PACKAGE);
-            if (resourceId > 0) {
-                mStatusBarHeight = getResources().getDimensionPixelSize(resourceId);
-                mAlreadyGetStatusBarHeight = true;
-                Log.d(TAG, String.format("Get status bar height %d", mStatusBarHeight));
-            }
-        }
-
+        this.mStatusBarHeight = StatusBarHeightUtil.getStatusBarHeight(getContext());
     }
-
-    private int mStatusBarHeight = 50;
-
-    private boolean mAlreadyGetStatusBarHeight = false;
-
 
     private int mOldHeight = -1;
 
+
+    /*高度发生了变化 重新进行测量*/
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 
@@ -121,12 +105,11 @@ public class CustomRootLayout extends LinearLayout implements ViewTreeObserver.O
             final PanelLayout bottom = getPanelLayout(this);
 
             if (bottom == null) {
-                Log.d(TAG, "bottom == null break;");
+                Log.w(TAG, "bottom == null break;");
                 break;
             }
 
-            // 检测到真正的 由于键盘收起触发了本次的布局变化
-
+            // 检测到真正的 由于键盘收起触发了本次的布局变化 键盘的高度发生了变化，则隐藏当前的矿体
             if (offset > 0) {
                 //键盘弹起 (offset > 0，高度变小)
                 bottom.handleHide();
@@ -161,6 +144,7 @@ public class CustomRootLayout extends LinearLayout implements ViewTreeObserver.O
 
         if (view instanceof ViewGroup) {
             for (int i = 0; i < ((ViewGroup) view).getChildCount(); i++) {
+                /*遍历获取当前的底部显示菜单内容*/
                 PanelLayout v = getPanelLayout(((ViewGroup) view).getChildAt(i));
                 if (v != null) {
                     mPanelLayout = v;
@@ -173,6 +157,7 @@ public class CustomRootLayout extends LinearLayout implements ViewTreeObserver.O
 
     }
 
+    /*是否输入法显示当前的框体*/
     private boolean mIsKeyboardShowing = false;
 
     protected void onKeyboardShowing(final boolean isShowing) {
@@ -181,7 +166,12 @@ public class CustomRootLayout extends LinearLayout implements ViewTreeObserver.O
         }
 
         this.mIsKeyboardShowing = isShowing;
-        getPanelLayout(this).setIsKeyboardShowing(isShowing);
+        final PanelLayout panelLayout = getPanelLayout(this);
+        if (panelLayout != null) {
+            panelLayout.setIsKeyboardShowing(isShowing);
+        } else {
+           Log.w(TAG, "can't sync the keyboard status to panel layout, panel layout can't find.");
+        }
 
         if (mKeyboardShowingListener != null) {
             mKeyboardShowingListener.onKeyboardShowing(isShowing);
@@ -195,7 +185,8 @@ public class CustomRootLayout extends LinearLayout implements ViewTreeObserver.O
         super.onLayout(changed, l, t, r, b);
 
         if (Math.abs(maxBottom - b) == mStatusBarHeight) {
-            Log.w(TAG, String.format("customRootLayout on layout get max bottom value offset just equal statusBar height %d", mStatusBarHeight));
+            Log.w(TAG, String.format("customRootLayout on layout get max bottom value offset just" +
+                    " equal statusBar height %d", mStatusBarHeight));
             return;
         }
 
@@ -214,47 +205,10 @@ public class CustomRootLayout extends LinearLayout implements ViewTreeObserver.O
 
     }
 
-    private int mLastHeight = 0;
-
-    @Override
-    public void onGlobalLayout() {
-        final int height = getHeight();
-
-        if (mLastHeight == 0) {
-            mLastHeight = height;
-            return;
-        }
-
-        if (mLastHeight == height) {
-            return;
-        }
-
-        final int keyboardHeight = Math.abs(mLastHeight - height);
-        if (keyboardHeight == mStatusBarHeight) {
-            Log.w(TAG, String.format("On global layout change get keyboard height just equal statusBar height %d", keyboardHeight));
-            return;
-        }
-
-        mLastHeight = height;
-
-        final boolean change = KeyboardUtil.saveKeyboardHeight(getContext(), keyboardHeight);
-        if (change) {
-            final int panelHeight = getPanelLayout(this).getHeight();
-            final int validPanelHeight = KeyboardUtil.getValidPanelHeight(getContext());
-            if (panelHeight != validPanelHeight) {
-                Log.d(TAG, "refresh panel height");
-                getPanelLayout(this).refreshHeight();
-            }
-        }
-
-    }
-
     private OnKeyboardShowingListener mKeyboardShowingListener;
 
     /**
-     * Set a {@link OnKeyboardShowingListener} to listen keyboard showing state.
-     *
-     * @param keyboardShowingListener
+     * @param keyboardShowingListener to listen keyboard showing state.
      */
     public void setOnKeyboardShowingListener(OnKeyboardShowingListener keyboardShowingListener) {
         mKeyboardShowingListener = keyboardShowingListener;
@@ -269,8 +223,8 @@ public class CustomRootLayout extends LinearLayout implements ViewTreeObserver.O
          * Keyboard showing state callback method.
          * <p>
          *     This method is invoked in {@link View#layout(int, int, int, int)} which is one of the
-         *     View's draw lifecycle callback methods, and it should be focused on caculating view's
-         *     left, top, right, bottom. So avoiding those time-consuming operation(I/O, complex caculation,
+         *     View's draw lifecycle callback methods, and it should be focused on calculating view's
+         *     left, top, right, bottom. So avoiding those time-consuming operation(I/O, complex calculation,
          *     alloc objects, etc.) here from blocking main ui thread is recommended.
          * </p>
          *

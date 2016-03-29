@@ -1,4 +1,4 @@
-package cn.dreamtobe.jkpswitch.activity.utils;
+package cn.dreamtobe.kpswitch.demo.activity;
 
 import android.content.Intent;
 import android.net.Uri;
@@ -8,9 +8,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
-import cn.dreamtobe.jkpswitch.R;
-import cn.dreamtobe.jkpswitch.activity.ChattingActivity;
-import cn.dreamtobe.jkpswitch.activity.JChattingActivity;
+import cn.dreamtobe.kpswitch.demo.R;
 
 /**
  * Created by Jacksgong on 15/7/1.
@@ -27,12 +25,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onClickResolved(final View view) {
-        startActivity(new Intent(this, JChattingActivity.class));
+        startActivity(new Intent(this, ChattingResolvedActivity.class));
     }
+
+    public void onClickFullScreenResolved(final View view) {
+        startActivity(new Intent(this, ChattingResolvedFullScreenActivity.class));
+    }
+
 
     public void onClickUnResolved(final View view) {
         // 使用差别只是未使用CustomContentRootLayout与PanelRotLayout 并且在切换的时候未使用PanelRootLayout#setIsHide
-        startActivity(new Intent(this, ChattingActivity.class));
+        startActivity(new Intent(this, ChattingUnresolvedActivity.class));
     }
 
     @Override

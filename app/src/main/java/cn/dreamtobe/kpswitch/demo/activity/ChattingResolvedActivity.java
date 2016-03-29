@@ -1,4 +1,4 @@
-package cn.dreamtobe.jkpswitch.activity;
+package cn.dreamtobe.kpswitch.demo.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -10,9 +10,9 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.TextView;
 
-import cn.dreamtobe.jkpswitch.R;
-import cn.dreamtobe.jkpswitch.activity.utils.TranslucentActivity;
+import cn.dreamtobe.kpswitch.demo.R;
 import cn.dreamtobe.kpswitch.util.KeyboardUtil;
 import cn.dreamtobe.kpswitch.widget.CustomRootLayout;
 import cn.dreamtobe.kpswitch.widget.PanelLayout;
@@ -20,21 +20,23 @@ import cn.dreamtobe.kpswitch.widget.PanelLayout;
 /**
  * Created by Jacksgong on 15/7/1.
  * <p/>
- * Desc: 适配了 Panel<->Keybord 切换冲突
+ * Desc: 适配了 Panel<->Keyboard 切换冲突
  */
-public class JChattingActivity extends AppCompatActivity {
+public class ChattingResolvedActivity extends AppCompatActivity {
 
     private static final String TAG = "JChattingActivity";
     private CustomRootLayout mRootView;
     private RecyclerView mContentRyv;
     private EditText mSendEdt;
     private PanelLayout mPanelRoot;
+    private TextView sendImgTv;
 
     private void assignViews() {
         mRootView = (CustomRootLayout) findViewById(R.id.rootView);
         mContentRyv = (RecyclerView) findViewById(R.id.content_ryv);
         mSendEdt = (EditText) findViewById(R.id.send_edt);
         mPanelRoot = (PanelLayout) findViewById(R.id.panel_root);
+        sendImgTv = (TextView) findViewById(R.id.send_img_tv);
     }
 
 
@@ -50,9 +52,18 @@ public class JChattingActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_chatting);
+        setContentView(R.layout.activity_chatting_resolved);
 
         assignViews();
+        KeyboardUtil.attach(this, mPanelRoot);
+
+        sendImgTv.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // mock start the translucent full screen activity.
+                startActivity(new Intent(ChattingResolvedActivity.this, TranslucentActivity.class));
+            }
+        });
 
         // Add keyboard showing state callback, do like this when you want to listen in the keyboard's show/hide change.
         mRootView.setOnKeyboardShowingListener(new CustomRootLayout.OnKeyboardShowingListener() {
@@ -91,7 +102,4 @@ public class JChattingActivity extends AppCompatActivity {
         return super.dispatchKeyEvent(event);
     }
 
-    public void onClickPhoto(final View view) {
-        startActivity(new Intent(this, TranslucentActivity.class));
-    }
 }
